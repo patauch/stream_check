@@ -60,7 +60,6 @@ def run(checkList, pauseList, checkKeys):
     :param checkKeys: list of rtsp stream names
     :return:
     """
-    lock = threading.Lock()
     while True:
         for key in checkKeys:
             if pauseList[key] == 0:
