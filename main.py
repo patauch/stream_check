@@ -64,7 +64,6 @@ def run(checkList, pauseList, checkKeys):
     while True:
         for key in checkKeys:
             if pauseList[key] == 0:
-                lock.acquire()
 
                 ret = get_stream_status(checkList[key])
 
@@ -73,7 +72,6 @@ def run(checkList, pauseList, checkKeys):
                 else:
                     listOfStatuses[key] = False
                 pauseList[key] = 30
-                lock.release()
             else:
                 pauseList[key] -= 1
                 time.sleep(1)
@@ -87,11 +85,8 @@ def print_status(checkList):
     :return:
     """
     while True:
-        lock = threading.Lock()
-        lock.acquire()
         for key in listOfStatuses.keys():
             print(f'{key} working: {listOfStatuses[key]}')
-        lock.release()
         time.sleep(2)
         os.system('cls')
 
