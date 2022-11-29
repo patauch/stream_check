@@ -17,10 +17,26 @@ import threading
 import json
 from subprocess import call
 
-
 listOfStatuses = {}
 
+
+def get_stream_status(URL):
+    """
+    function captures first frame of rtsp stream and return result of capturing
+    :param URL: RTSP stream link
+    :return: result of capture
+    """
+    stream = cv2.VideoCapture(URL)
+    ret, frame = stream.read()
+    stream.release()
+    return ret
+
+
 def get_rtsp():
+    """
+    function parse json file and create dictionary files for each camera available
+    :return: dictionaries with links and timeouts to check
+    """
     try:
         with open('rtsp.json', 'r') as file:
             listOfLinks = {}
@@ -30,7 +46,6 @@ def get_rtsp():
                 listOfLinks[key] = data[key]
                 listOfPause[key] = 0
                 listOfStatuses[key] = False
-
     except FileNotFoundError:
         print('No link file')
         return None
@@ -38,30 +53,46 @@ def get_rtsp():
 
 
 def run(checkList, pauseList, checkKeys):
+    """
+    main function to check existing rtsp streams
+    :param checkList: list of links
+    :param pauseList: list of timeouts
+    :param checkKeys: list of rtsp stream names
+    :return:
+    """
     lock = threading.Lock()
     while True:
         for key in checkKeys:
             if pauseList[key] == 0:
                 lock.acquire()
-                ret, frame = cv2.VideoCapture(checkList[key]).read()
+
+                ret = get_stream_status(checkList[key])
+
                 if ret:
                     listOfStatuses[key] = True
                 else:
                     listOfStatuses[key] = False
+                pauseList[key] = 30
                 lock.release()
             else:
                 pauseList[key] -= 1
+                time.sleep(1)
             time.sleep(1)
 
 
 def print_status(checkList):
+    """
+    function to print status for rtsp links
+    :param checkList: list of links
+    :return:
+    """
     while True:
         lock = threading.Lock()
         lock.acquire()
         for key in listOfStatuses.keys():
-            print(f'{checkList[key]} working: {listOfStatuses[key]}')
+            print(f'{key} working: {listOfStatuses[key]}')
         lock.release()
-        time.sleep(1)
+        time.sleep(2)
         os.system('cls')
 
 
