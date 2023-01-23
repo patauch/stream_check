@@ -7,7 +7,7 @@ Variants:
 Questions:
 1) How to check status of webcam without opening rtsp stream?
 2) Is it really needed to develop such app
-
+a
 """
 import os
 import time
@@ -15,10 +15,10 @@ import time
 import cv2
 import threading
 import json
-from subprocess import call
-
+from threading import Event
+import keyboard
 listOfStatuses = {}
-
+STOP_THREADS = Event()
 
 def get_stream_status(URL):
     """
@@ -61,6 +61,9 @@ def run(checkList, pauseList, checkKeys):
     :return:
     """
     while True:
+        global STOP_THREADS
+        if STOP_THREADS.is_set():
+            break
         for key in checkKeys:
             if pauseList[key] == 0:
 
@@ -83,20 +86,34 @@ def print_status(checkList):
     :param checkList: list of links
     :return:
     """
+    event_list = []
     while True:
+        global STOP_THREADS
+        if STOP_THREADS.is_set():
+            return
         for key in listOfStatuses.keys():
             print(f'{key} working: {listOfStatuses[key]}')
         time.sleep(2)
         os.system('cls')
 
 
+def get_input():
+    while True:
+        global STOP_THREADS
+        if keyboard.read_key() == 'c':
+            STOP_THREADS.set()
+        break
+
+
 def main():
-    checkList, pauseList = get_rtsp()
-    checkKeys = checkList.keys()
-    runThread = threading.Thread(target=run, args=[checkList, pauseList, checkKeys])
-    printThread = threading.Thread(target=print_status, args=[checkList])
-    runThread.start()
-    printThread.start()
+        checkList, pauseList = get_rtsp()
+        checkKeys = checkList.keys()
+        runThread = threading.Thread(target=run, args=[checkList, pauseList, checkKeys])
+        keybThread = threading.Thread(target=get_input())
+        printThread = threading.Thread(target=print_status, args=[checkList])
+        runThread.start()
+        keybThread.start()
+        printThread.start()
 
 
 if __name__=="__main__":
