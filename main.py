@@ -20,6 +20,7 @@ import keyboard
 listOfStatuses = {}
 STOP_THREADS = Event()
 
+
 def get_stream_status(URL):
     """
     function captures first frame of rtsp stream and return result of capturing
@@ -62,6 +63,7 @@ def run(checkList, pauseList, checkKeys):
     """
     while True:
         global STOP_THREADS
+
         if STOP_THREADS.is_set():
             break
         for key in checkKeys:
@@ -102,18 +104,23 @@ def get_input():
         global STOP_THREADS
         if keyboard.read_key() == 'c':
             STOP_THREADS.set()
-        break
+            break
 
 
 def main():
+
         checkList, pauseList = get_rtsp()
         checkKeys = checkList.keys()
         runThread = threading.Thread(target=run, args=[checkList, pauseList, checkKeys])
-        keybThread = threading.Thread(target=get_input())
+        keybThread = threading.Thread(target=get_input)
         printThread = threading.Thread(target=print_status, args=[checkList])
         runThread.start()
         keybThread.start()
         printThread.start()
+        runThread.join()
+        keybThread.join()
+        printThread.join()
+
 
 
 if __name__=="__main__":
