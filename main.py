@@ -63,7 +63,6 @@ def run(checkList, pauseList, checkKeys):
     """
     while True:
         global STOP_THREADS
-
         if STOP_THREADS.is_set():
             break
         for key in checkKeys:
@@ -92,8 +91,10 @@ def print_status(checkList):
     while True:
         global STOP_THREADS
         if STOP_THREADS.is_set():
-            return
+            break
         for key in listOfStatuses.keys():
+            if STOP_THREADS.is_set():
+                break
             print(f'{key} working: {listOfStatuses[key]}')
         time.sleep(2)
         os.system('cls')
@@ -117,9 +118,9 @@ def main():
         runThread.start()
         keybThread.start()
         printThread.start()
-        runThread.join()
+        """runThread.join()
         keybThread.join()
-        printThread.join()
+        printThread.join()"""
 
 
 
