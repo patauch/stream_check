@@ -64,13 +64,11 @@ def run(check_list, pause_list, check_keys):
     """
     while True:
         global STOP_THREADS
-        if STOP_THREADS.is_set():
-            break
         for key in check_keys:
+            if STOP_THREADS.is_set():
+                break
             if pause_list[key] == 0:
-
                 ret = get_stream_status(check_list[key])
-
                 if ret:
                     list_of_statuses[key] = True
                 else:
@@ -89,8 +87,6 @@ def print_status():
     """
     while True:
         global STOP_THREADS
-        if STOP_THREADS.is_set():
-            break
         for key in list_of_statuses.keys():
             if STOP_THREADS.is_set():
                 break
@@ -102,7 +98,9 @@ def print_status():
 def get_input():
     while True:
         global STOP_THREADS
-        if keyboard.read_key() == 'c':
+        a = input()
+        # keyboard.read_key() == 'c' or
+        if a == 'c':
             STOP_THREADS.set()
             break
 
