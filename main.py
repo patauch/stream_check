@@ -17,17 +17,18 @@ import threading
 import json
 from threading import Event
 import keyboard
-listOfStatuses = {}
+
+list_of_statuses = {}
 STOP_THREADS = Event()
 
 
-def get_stream_status(URL):
+def get_stream_status(url):
     """
     function captures first frame of rtsp stream and return result of capturing
-    :param URL: RTSP stream link
+    :param url: RTSP stream link
     :return: result of capture
     """
-    stream = cv2.VideoCapture(URL)
+    stream = cv2.VideoCapture(url)
     ret, frame = stream.read()
     stream.release()
     return ret
@@ -40,62 +41,60 @@ def get_rtsp():
     """
     try:
         with open('rtsp.json', 'r') as file:
-            listOfLinks = {}
-            listOfPause = {}
+            list_of_links = {}
+            list_of_pause = {}
             data = json.load(file)
             for key in data.keys():
-                listOfLinks[key] = data[key]
-                listOfPause[key] = 0
-                listOfStatuses[key] = False
+                list_of_links[key] = data[key]
+                list_of_pause[key] = 0
+                list_of_statuses[key] = False
     except FileNotFoundError:
         print('No link file')
         return None
-    return listOfLinks, listOfPause
+    return list_of_links, list_of_pause
 
 
-def run(checkList, pauseList, checkKeys):
+def run(check_list, pause_list, check_keys):
     """
     main function to check existing rtsp streams
-    :param checkList: list of links
-    :param pauseList: list of timeouts
-    :param checkKeys: list of rtsp stream names
+    :param check_list: list of links
+    :param pause_list: list of timeouts
+    :param check_keys: list of rtsp stream names
     :return:
     """
     while True:
         global STOP_THREADS
         if STOP_THREADS.is_set():
             break
-        for key in checkKeys:
-            if pauseList[key] == 0:
+        for key in check_keys:
+            if pause_list[key] == 0:
 
-                ret = get_stream_status(checkList[key])
+                ret = get_stream_status(check_list[key])
 
                 if ret:
-                    listOfStatuses[key] = True
+                    list_of_statuses[key] = True
                 else:
-                    listOfStatuses[key] = False
-                pauseList[key] = 30
+                    list_of_statuses[key] = False
+                pause_list[key] = 30
             else:
-                pauseList[key] -= 1
+                pause_list[key] -= 1
                 time.sleep(1)
             time.sleep(1)
 
 
-def print_status(checkList):
+def print_status():
     """
     function to print status for rtsp links
-    :param checkList: list of links
     :return:
     """
-    event_list = []
     while True:
         global STOP_THREADS
         if STOP_THREADS.is_set():
             break
-        for key in listOfStatuses.keys():
+        for key in list_of_statuses.keys():
             if STOP_THREADS.is_set():
                 break
-            print(f'{key} working: {listOfStatuses[key]}')
+            print(f'{key} working: {list_of_statuses[key]}')
         time.sleep(2)
         os.system('cls')
 
@@ -109,20 +108,18 @@ def get_input():
 
 
 def main():
-
-        checkList, pauseList = get_rtsp()
-        checkKeys = checkList.keys()
-        runThread = threading.Thread(target=run, args=[checkList, pauseList, checkKeys])
-        keybThread = threading.Thread(target=get_input)
-        printThread = threading.Thread(target=print_status, args=[checkList])
-        runThread.start()
-        keybThread.start()
-        printThread.start()
-        """runThread.join()
+    check_list, pause_list = get_rtsp()
+    check_keys = check_list.keys()
+    run_thread = threading.Thread(target=run, args=[check_list, pause_list, check_keys])
+    catch_input_thread = threading.Thread(target=get_input)
+    print_thread = threading.Thread(target=print_status)
+    run_thread.start()
+    catch_input_thread.start()
+    print_thread.start()
+    """runThread.join()
         keybThread.join()
         printThread.join()"""
 
 
-
-if __name__=="__main__":
+if __name__ == "__main__":
     main()
