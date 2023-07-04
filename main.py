@@ -66,7 +66,7 @@ def run(check_list, pause_list, check_keys):
         global STOP_THREADS
         for key in check_keys:
             if STOP_THREADS.is_set():
-                break
+                return
             if pause_list[key] == 0:
                 ret = get_stream_status(check_list[key])
                 if ret:
@@ -89,7 +89,7 @@ def print_status():
         global STOP_THREADS
         for key in list_of_statuses.keys():
             if STOP_THREADS.is_set():
-                break
+                return
             print(f'{key} working: {list_of_statuses[key]}')
         time.sleep(2)
         os.system('cls')
@@ -102,7 +102,7 @@ def get_input():
         # keyboard.read_key() == 'c' or
         if a == 'c':
             STOP_THREADS.set()
-            break
+            return
 
 
 def main():
