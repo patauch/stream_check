@@ -16,7 +16,6 @@ import cv2
 import threading
 import json
 from threading import Event
-import keyboard
 
 list_of_statuses = {}
 STOP_THREADS = Event()
