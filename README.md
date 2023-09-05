@@ -1,0 +1,1 @@
+# Something for testing availability for cameras
