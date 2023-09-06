@@ -6,8 +6,8 @@ RUN apt-get update && apt-get install ffmpeg libsm6 libxext6  -y
 ## Pip dependencies
 # Upgrade pip
 RUN pip install --upgrade pip
-# Copy dependencies
-COPY requirements.txt /tmp/requirements.txt
-RUN pip install -r /tmp/requirements.txt
+# Copy files
+COPY . . 
+RUN pip install -r requirements.txt
 
-
+CMD python main.py
