@@ -91,7 +91,7 @@ def print_status():
                 return
             print(f'{key} working: {list_of_statuses[key]}')
         time.sleep(2)
-        os.system('cls')
+        os.system('clear')
 
 
 def get_input():
