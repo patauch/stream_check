@@ -1,4 +1,4 @@
-*.json
+rtsp.json
 /test
 .idea/workspace.xml
 .idea/*.iws
