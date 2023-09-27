@@ -10,4 +10,6 @@ RUN pip install --upgrade pip
 COPY . . 
 RUN pip install -r requirements.txt
 
+RUN echo "export TERM=xterm"  >> ~/.bashrc
+
 CMD python main.py
