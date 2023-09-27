@@ -61,6 +61,8 @@ def run(check_list, pause_list, check_keys):
     :param check_keys: list of rtsp stream names
     :return:
     """
+    times_refreshed = 0
+    filler = '-'
     while True:
         global STOP_THREADS
         for key in check_keys:
@@ -77,6 +79,13 @@ def run(check_list, pause_list, check_keys):
                 pause_list[key] -= 1
                 time.sleep(1)
             time.sleep(1)
+        os.system('clear')
+        print(f'{f"refreshed {times_refreshed+1} times":{filler}^40}')
+        for key in check_keys:
+            print(f'{key} working: {list_of_statuses[key]}')
+        time.sleep(2)
+        times_refreshed+=1
+        
 
 
 def print_status():
@@ -109,10 +118,10 @@ def main():
     check_keys = check_list.keys()
     run_thread = threading.Thread(target=run, args=[check_list, pause_list, check_keys])
     catch_input_thread = threading.Thread(target=get_input)
-    print_thread = threading.Thread(target=print_status)
+    #print_thread = threading.Thread(target=print_status)
     run_thread.start()
     catch_input_thread.start()
-    print_thread.start()
+    #print_thread.start()
     """runThread.join()
         keybThread.join()
         printThread.join()"""
