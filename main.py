@@ -15,7 +15,7 @@ import time
 import cv2
 import threading
 import json
-from threading import Event, Lock
+from threading import Event
 
 STATUSES = {}
 STOP_THREADS = Event()
