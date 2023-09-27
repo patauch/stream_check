@@ -15,8 +15,9 @@ import time
 import cv2
 import threading
 import json
-from threading import Event
+from threading import Event, Lock
 
+STATUS_LOCK = Lock()
 STATUSES = {}
 STOP_THREADS = Event()
 
@@ -38,6 +39,7 @@ def get_rtsp():
     function parse json file and create dictionary files for each camera available
     :return: dictionaries with links and timeouts to check
     """
+    global STATUSES
     try:
         with open('rtsp.json', 'r') as file:
             list_of_links = {}
@@ -63,6 +65,7 @@ def run(check_list, pause_list, check_keys):
     """
     while True:
         global STOP_THREADS
+        global STATUS_LOCK
         global STATUSES
         for key in check_keys:
             if STOP_THREADS.is_set():
@@ -78,6 +81,13 @@ def run(check_list, pause_list, check_keys):
                 pause_list[key] -= 1
                 time.sleep(1)
             time.sleep(1)
+        """print(f'|{f"refreshed {times_refreshed+1} times":{filler}^{string_len}}|')
+        for key in check_keys:
+                print(f'|{f"{key} working: {STATUSES[key]}":^{string_len}}|')
+        print(f"|{filler*string_len}|")"""
+        time.sleep(2)
+        
+        
 
 
 def print_status():
@@ -85,15 +95,22 @@ def print_status():
     function to print status for rtsp links
     :return:
     """
-    while True:
+    times_refreshed = 0
+    filler = '-'
+    string_len = 45
+    while True:    
         global STOP_THREADS
+        global STATUS_LOCK
         global STATUSES
+        os.system('clear')
+        print(f'|{f"refreshed {times_refreshed+1} times":{filler}^{string_len}}|')
         for key in STATUSES.keys():
             if STOP_THREADS.is_set():
                 return
-            print(f'{key} working: {STATUSES[key]}')
-        time.sleep(2)
-        os.system('clear')
+            print(f'|{f"{key} working: {STATUSES[key]}":^{string_len}}|')
+        print(f"|{filler*string_len}|")
+        times_refreshed+=1
+        time.sleep(4)
 
 
 def get_input():
