@@ -17,7 +17,6 @@ import threading
 import json
 from threading import Event, Lock
 
-STATUS_LOCK = Lock()
 STATUSES = {}
 STOP_THREADS = Event()
 
@@ -65,7 +64,6 @@ def run(check_list, pause_list, check_keys):
     """
     while True:
         global STOP_THREADS
-        global STATUS_LOCK
         global STATUSES
         for key in check_keys:
             if STOP_THREADS.is_set():
@@ -100,7 +98,6 @@ def print_status():
     string_len = 45
     while True:    
         global STOP_THREADS
-        global STATUS_LOCK
         global STATUSES
         os.system('clear')
         print(f'|{f"refreshed {times_refreshed+1} times":{filler}^{string_len}}|')
@@ -132,9 +129,6 @@ def main():
     run_thread.start()
     catch_input_thread.start()
     print_thread.start()
-    """runThread.join()
-        keybThread.join()
-        printThread.join()"""
 
 
 if __name__ == "__main__":
