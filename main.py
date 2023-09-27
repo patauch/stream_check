@@ -17,8 +17,8 @@ import threading
 import json
 from threading import Event, Lock
 
-list_lock = Lock()
-list_of_statuses = {}
+STATUS_LOCK = Lock()
+STATUSES = {}
 STOP_THREADS = Event()
 
 
@@ -39,6 +39,7 @@ def get_rtsp():
     function parse json file and create dictionary files for each camera available
     :return: dictionaries with links and timeouts to check
     """
+    global STATUSES
     try:
         with open('rtsp.json', 'r') as file:
             list_of_links = {}
@@ -47,7 +48,7 @@ def get_rtsp():
             for key in data.keys():
                 list_of_links[key] = data[key]
                 list_of_pause[key] = 0
-                list_of_statuses[key] = False
+                STATUSES[key] = False
     except FileNotFoundError:
         print('No link file')
         return None
@@ -62,36 +63,29 @@ def run(check_list, pause_list, check_keys):
     :param check_keys: list of rtsp stream names
     :return:
     """
-    times_refreshed = 0
-    filler = '-'
-    string_len = 45
     while True:
         global STOP_THREADS
-        global list_lock
-        list_lock.acquire()
-        print(list_lock)
+        global STATUS_LOCK
+        global STATUSES
         for key in check_keys:
             if STOP_THREADS.is_set():
                 return
             if pause_list[key] == 0:
                 ret = get_stream_status(check_list[key])
                 if ret:
-                    list_of_statuses[key] = True
+                    STATUSES[key] = True
                 else:
-                    list_of_statuses[key] = False
+                    STATUSES[key] = False
                 pause_list[key] = 30
             else:
                 pause_list[key] -= 1
                 time.sleep(1)
             time.sleep(1)
-        list_lock.release()
-        os.system('clear')
-        print(f'|{f"refreshed {times_refreshed+1} times":{filler}^{string_len}}|')
+        """print(f'|{f"refreshed {times_refreshed+1} times":{filler}^{string_len}}|')
         for key in check_keys:
-                print(f'|{f"{key} working: {list_of_statuses[key]}":^{string_len}}|')
-        print(f"|{filler*string_len}|")
+                print(f'|{f"{key} working: {STATUSES[key]}":^{string_len}}|')
+        print(f"|{filler*string_len}|")"""
         time.sleep(2)
-        times_refreshed+=1
         
         
 
@@ -101,20 +95,22 @@ def print_status():
     function to print status for rtsp links
     :return:
     """
-    while True:
-        times_refreshed = 0
-        filler = '-'
-        string_len = 45
+    times_refreshed = 0
+    filler = '-'
+    string_len = 45
+    while True:    
         global STOP_THREADS
-        global list_lock
-        list_lock.acquire()
-        for key in list_of_statuses.keys():
+        global STATUS_LOCK
+        global STATUSES
+        os.system('clear')
+        print(f'|{f"refreshed {times_refreshed+1} times":{filler}^{string_len}}|')
+        for key in STATUSES.keys():
             if STOP_THREADS.is_set():
                 return
-            print(f'{key} working: {list_of_statuses[key]}')
-        time.sleep(2)
-        os.system('clear')
-        list_lock.release()
+            print(f'|{f"{key} working: {STATUSES[key]}":^{string_len}}|')
+        print(f"|{filler*string_len}|")
+        times_refreshed+=1
+        time.sleep(4)
 
 
 def get_input():
@@ -132,10 +128,10 @@ def main():
     check_keys = check_list.keys()
     run_thread = threading.Thread(target=run, args=[check_list, pause_list, check_keys])
     catch_input_thread = threading.Thread(target=get_input)
-    #print_thread = threading.Thread(target=print_status)
+    print_thread = threading.Thread(target=print_status)
     run_thread.start()
     catch_input_thread.start()
-    #print_thread.start()
+    print_thread.start()
     """runThread.join()
         keybThread.join()
         printThread.join()"""
