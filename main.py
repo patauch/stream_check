@@ -15,8 +15,9 @@ import time
 import cv2
 import threading
 import json
-from threading import Event
+from threading import Event, Lock
 
+list_lock = Lock()
 list_of_statuses = {}
 STOP_THREADS = Event()
 
@@ -63,8 +64,12 @@ def run(check_list, pause_list, check_keys):
     """
     times_refreshed = 0
     filler = '-'
+    string_len = 45
     while True:
         global STOP_THREADS
+        global list_lock
+        list_lock.acquire()
+        print(list_lock)
         for key in check_keys:
             if STOP_THREADS.is_set():
                 return
@@ -79,12 +84,15 @@ def run(check_list, pause_list, check_keys):
                 pause_list[key] -= 1
                 time.sleep(1)
             time.sleep(1)
+        list_lock.release()
         os.system('clear')
-        print(f'{f"refreshed {times_refreshed+1} times":{filler}^40}')
+        print(f'|{f"refreshed {times_refreshed+1} times":{filler}^{string_len}}|')
         for key in check_keys:
-            print(f'{key} working: {list_of_statuses[key]}')
+                print(f'|{f"{key} working: {list_of_statuses[key]}":^{string_len}}|')
+        print(f"|{filler*string_len}|")
         time.sleep(2)
         times_refreshed+=1
+        
         
 
 
@@ -94,13 +102,19 @@ def print_status():
     :return:
     """
     while True:
+        times_refreshed = 0
+        filler = '-'
+        string_len = 45
         global STOP_THREADS
+        global list_lock
+        list_lock.acquire()
         for key in list_of_statuses.keys():
             if STOP_THREADS.is_set():
                 return
             print(f'{key} working: {list_of_statuses[key]}')
         time.sleep(2)
         os.system('clear')
+        list_lock.release()
 
 
 def get_input():
