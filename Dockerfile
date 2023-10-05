@@ -12,4 +12,6 @@ RUN pip install -r requirements.txt
 
 RUN echo "export TERM=xterm"  >> ~/.bashrc
 
+EXPOSE 5000
+
 CMD python main.py
