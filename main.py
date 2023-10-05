@@ -15,16 +15,29 @@ import time
 import cv2
 import threading
 import json
-from threading import Event
-from flask import Flask, render_template_string
+from threading import Event, Lock
+from flask import Flask, render_template_string, request, redirect
 
 STATUSES = {}
 STOP_THREADS = Event()
+DATA_LOCK = Lock()
 app = Flask(__name__)
 
 
-@app.route('/')
+@app.route('/', methods=['GET', 'POST'])
 def home():
+    if request.method == "POST":
+        action = request.form.get("action")
+        key = request.form.get("key")
+        value = request.form.get("value")
+
+        with DATA_LOCK:
+            global STATUSES
+            if action == "add":
+                STATUSES[key] = get_stream_status(value)
+            elif action == "delete" and key in STATUSES:
+                del STATUSES[key]
+        return redirect('/')
     return render_template_string('''
     <!DOCTYPE html>
     <html lang="en">
@@ -32,7 +45,7 @@ def home():
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-        <title>IP-camera check</title>
+        <title>IP-cam check</title>
         <style>
             body {
                 display: flex;
@@ -49,6 +62,7 @@ def home():
                     <tr>
                         <th>Камера</th>
                         <th>Возможность подключения</th>
+                        <th>Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -56,11 +70,24 @@ def home():
                         <tr>
                             <td>{{ key }}</td>
                             <td>{{ value }}</td>
+                            <td>
+                                <form method="post">
+                                    <input type="hidden" name="action" value="delete">
+                                    <input type="hidden" name="key" value="{{ key }}">
+                                    <button type="submit" class="btn btn-danger">Delete</button>
+                                </form>
+                            </td>
                         </tr>
                     {% endfor %}
                 </tbody>
             </table>
-            <button class="btn btn-primary" onclick="location.reload()">Reload</button>
+            <form method="post" class="mt-3">
+                <input type="hidden" name="action" value="add">
+                <input type="text" name="key" placeholder="Key" required>
+                <input type="text" name="value" placeholder="Value" required>
+                <button type="submit" class="btn btn-primary">Add</button>
+            </form>
+            <button class="btn btn-secondary mt-3" onclick="location.reload()">Reload</button>
         </div>
     </body>
     </html>
@@ -110,25 +137,26 @@ def run(check_list, pause_list, check_keys):
     while True:
         global STOP_THREADS
         global STATUSES
-        for key in check_keys:
-            if STOP_THREADS.is_set():
-                return
-            if pause_list[key] == 0:
-                ret = get_stream_status(check_list[key])
-                if ret:
-                    STATUSES[key] = True
+        with DATA_LOCK:
+            for key in check_keys:
+                if STOP_THREADS.is_set():
+                    return
+                if pause_list[key] == 0:
+                    ret = get_stream_status(check_list[key])
+                    if ret:
+                        STATUSES[key] = True
+                    else:
+                        STATUSES[key] = False
+                    pause_list[key] = 30
                 else:
-                    STATUSES[key] = False
-                pause_list[key] = 30
-            else:
-                pause_list[key] -= 1
+                    pause_list[key] -= 1
+                    time.sleep(1)
                 time.sleep(1)
-            time.sleep(1)
-        """print(f'|{f"refreshed {times_refreshed+1} times":{filler}^{string_len}}|')
-        for key in check_keys:
-                print(f'|{f"{key} working: {STATUSES[key]}":^{string_len}}|')
-        print(f"|{filler*string_len}|")"""
-        time.sleep(2)
+            """print(f'|{f"refreshed {times_refreshed+1} times":{filler}^{string_len}}|')
+            for key in check_keys:
+                    print(f'|{f"{key} working: {STATUSES[key]}":^{string_len}}|')
+            print(f"|{filler*string_len}|")"""
+            time.sleep(2)
         
         
 
@@ -177,7 +205,8 @@ def main():
 
 
 if __name__ == "__main__":
+    port = 5001
     t = threading.Thread(target=main())
     t.start()
-    app.run(host='0.0.0.0')
+    app.run(host='0.0.0.0', port=5001)
     
