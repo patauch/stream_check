@@ -16,10 +16,55 @@ import cv2
 import threading
 import json
 from threading import Event
+from flask import Flask, render_template_string
 
 STATUSES = {}
 STOP_THREADS = Event()
+app = Flask(__name__)
 
+
+@app.route('/')
+def home():
+    return render_template_string('''
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+        <title>IP-camera check</title>
+        <style>
+            body {
+                display: flex;
+                height: 100vh;
+                justify-content: center;
+                align-items: center;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container text-center">
+            <table class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th>Камера</th>
+                        <th>Возможность подключения</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for key, value in data.items() %}
+                        <tr>
+                            <td>{{ key }}</td>
+                            <td>{{ value }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <button class="btn btn-primary" onclick="location.reload()">Reload</button>
+        </div>
+    </body>
+    </html>
+    ''', data=STATUSES)
 
 def get_stream_status(url):
     """
@@ -99,7 +144,7 @@ def print_status():
     while True:    
         global STOP_THREADS
         global STATUSES
-        os.system('clear')
+        #os.system('clear')
         print(f'|{f"refreshed {times_refreshed+1} times":{filler}^{string_len}}|')
         for key in STATUSES.keys():
             if STOP_THREADS.is_set():
@@ -107,7 +152,7 @@ def print_status():
             print(f'|{f"{key} working: {STATUSES[key]}":^{string_len}}|')
         print(f"|{filler*string_len}|")
         times_refreshed+=1
-        time.sleep(4)
+        time.sleep(60)
 
 
 def get_input():
@@ -132,4 +177,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    t = threading.Thread(target=main())
+    t.start()
+    app.run(host='0.0.0.0')
+    
