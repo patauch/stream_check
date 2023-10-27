@@ -3,3 +3,4 @@ rtsp.json
 .idea/workspace.xml
 .idea/*.iws
 .idea/tasks.xml
+.env
