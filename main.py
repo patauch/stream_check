@@ -17,9 +17,19 @@ import threading
 import json
 from threading import Event, Lock
 from flask import Flask, render_template_string, request, redirect
+import asyncio
+from aiogram import Bot, Dispatcher, Router, types
+from aiogram.enums import ParseMode
+from aiogram.filters import CommandStart
+from aiogram.types import Message
+from dotenv import load_dotenv
 
+load_dotenv()
 STATUSES = {}
-STOP_THREADS = Event()
+STOP_THREADS = asyncio.Event()
+TOKEN = os.getenv("TOKEN")
+dp = Dispatcher()
+bot = Bot(TOKEN, parse_mode=ParseMode.HTML)
 DATA_LOCK = Lock()
 app = Flask(__name__)
 
@@ -158,8 +168,6 @@ def run(check_list, pause_list, check_keys):
             print(f"|{filler*string_len}|")"""
             time.sleep(2)
         
-        
-
 
 def print_status():
     """
@@ -183,29 +191,90 @@ def print_status():
         time.sleep(60)
 
 
-def get_input():
-    while True:
+async def get_input():
+    no_stop_event = True
+    while no_stop_event:
         global STOP_THREADS
-        a = input()
+        no_stop_event = not STOP_THREADS.is_set()
+        a = await asyncio.to_thread(input, "Enter 'c' to stop: " )
         # keyboard.read_key() == 'c' or
         if a == 'c':
             STOP_THREADS.set()
+            print("finished get_input")
             return
+        await asyncio.sleep(1)
 
-def main():
+@dp.message(CommandStart())
+async def command_start_handler(message: Message) -> None:
+    await message.answer(f"Hello, your chat id is {message.chat.id}")
+
+async def send_periodic_message() -> None:
+    chat_id = 256642109
+    tmp_statuses = None
+    no_stop_event = True
+    while no_stop_event:
+        global STOP_THREADS
+        no_stop_event = not STOP_THREADS.is_set()
+        updated_statuses = {}
+        global STATUSES
+        if STOP_THREADS.is_set():
+            print("finished send_periodic_message")
+            return
+        if tmp_statuses is None:
+            tmp_statuses = STATUSES.copy()
+        for a,b in zip(tmp_statuses, STATUSES):
+            if tmp_statuses[a] != STATUSES[b]:
+                updated_statuses[a] = STATUSES[b]
+                tmp_statuses[a] = STATUSES[b]
+        if len(updated_statuses)>0:
+            message = "Upadated Cams \n"
+            message += '\n'.join([f"{a}:{updated_statuses[a]}" for a in updated_statuses.keys()])
+            await bot.send_message(chat_id, message)
+        await asyncio.sleep(5)
+
+async def update_variable(check_list, pause_list, check_keys) -> None:
+    no_stop_event = True
+    while no_stop_event:
+        global STOP_THREADS
+        no_stop_event = not STOP_THREADS.is_set()
+        global STATUSES
+        with DATA_LOCK:
+            for key in check_keys:
+                if STOP_THREADS.is_set():
+                    print("finished update_variable")
+                    return
+                if pause_list[key] == 0:
+                    ret = get_stream_status(check_list[key])
+                    if ret:
+                        STATUSES[key] = True
+                    else:
+                        STATUSES[key] = False
+                    pause_list[key] = 30
+                else:
+                    pause_list[key] -= 1
+                    await asyncio.sleep(1)
+                await asyncio.sleep(1)
+
+
+def run_flask():
+    port = 5001
+    app.run(host='0.0.0.0', port=5000)
+
+def async_main():
     check_list, pause_list = get_rtsp()
     check_keys = check_list.keys()
-    run_thread = threading.Thread(target=run, args=[check_list, pause_list, check_keys])
-    catch_input_thread = threading.Thread(target=get_input)
-    print_thread = threading.Thread(target=print_status)
-    run_thread.start()
-    catch_input_thread.start()
-    print_thread.start()
-
+    loop = asyncio.get_event_loop()
+    update_task = loop.create_task(update_variable(check_list, pause_list, check_keys))
+    message_task = loop.create_task(send_periodic_message())
+    input_task = loop.create_task(get_input())
+    tg_task = loop.create_task(dp.start_polling(bot))
+    threading.Thread(target=run_flask).start()
+    loop.run_until_complete(asyncio.gather(tg_task, update_task, message_task, input_task))
 
 if __name__ == "__main__":
-    port = 5001
-    t = threading.Thread(target=main())
-    t.start()
-    app.run(host='0.0.0.0', port=5000)
+    #port = 5001
+    async_main()
+    #t = threading.Thread(target=main())
+    #t.start()
+    #app.run(host='0.0.0.0', port=5000)
     
