@@ -100,7 +100,7 @@ def get_stream_status(url):
     :return: result of capture
     """
     stream = cv2.VideoCapture(url)
-    ret, frame = stream.read()
+    ret = stream.grab() 
     stream.release()
     return ret
 
@@ -191,7 +191,6 @@ def get_input():
         if a == 'c':
             STOP_THREADS.set()
             return
-
 
 def main():
     check_list, pause_list = get_rtsp()
