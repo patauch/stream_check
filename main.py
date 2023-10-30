@@ -135,38 +135,6 @@ def get_rtsp():
         return None
     return list_of_links, list_of_pause
 
-
-def run(check_list, pause_list, check_keys):
-    """
-    main function to check existing rtsp streams
-    :param check_list: list of links
-    :param pause_list: list of timeouts
-    :param check_keys: list of rtsp stream names
-    :return:
-    """
-    while True:
-        global STOP_THREADS
-        global STATUSES
-        with DATA_LOCK:
-            for key in check_keys:
-                if STOP_THREADS.is_set():
-                    return
-                if pause_list[key] == 0:
-                    ret = get_stream_status(check_list[key])
-                    if ret:
-                        STATUSES[key] = True
-                    else:
-                        STATUSES[key] = False
-                    pause_list[key] = 30
-                else:
-                    pause_list[key] -= 1
-                    time.sleep(1)
-                time.sleep(1)
-            """print(f'|{f"refreshed {times_refreshed+1} times":{filler}^{string_len}}|')
-            for key in check_keys:
-                    print(f'|{f"{key} working: {STATUSES[key]}":^{string_len}}|')
-            print(f"|{filler*string_len}|")"""
-            time.sleep(2)
         
 
 def print_status():
