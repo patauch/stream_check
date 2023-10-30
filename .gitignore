@@ -4,3 +4,4 @@ rtsp.json
 .idea/*.iws
 .idea/tasks.xml
 .env
+/venv
