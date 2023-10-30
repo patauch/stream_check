@@ -209,7 +209,7 @@ async def command_start_handler(message: Message) -> None:
     await message.answer(f"Hello, your chat id is {message.chat.id}")
 
 async def send_periodic_message() -> None:
-    chat_id = 256642109
+    chat_id = os.getenv('CHAT_ID')
     tmp_statuses = None
     no_stop_event = True
     while no_stop_event:
@@ -270,6 +270,8 @@ def async_main():
     tg_task = loop.create_task(dp.start_polling(bot))
     threading.Thread(target=run_flask).start()
     loop.run_until_complete(asyncio.gather(tg_task, update_task, message_task, input_task))
+    #await (dp.start_polling(bot))
+    
 
 if __name__ == "__main__":
     #port = 5001
